@@ -1,0 +1,9 @@
+{
+  "name": "react-code",
+  "version": "1.0.0",
+  "description": "react学习库",
+  "main": "index.js",
+  "repository": "git@github.com:zw-slime/react-code.git",
+  "author": "张微 <960420710@qq.com>",
+  "license": "MIT"
+}
