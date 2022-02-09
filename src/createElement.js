@@ -1,5 +1,6 @@
-import {ElementType} from "./model";
+import {ElementType} from "./model.js";
 
+// 自定义babel的把jsx转虚拟dom的方法
 export function createElement(type,config,...args) {
     const props = Object.assign({},config);
     const hasChildren = args.length > 0;

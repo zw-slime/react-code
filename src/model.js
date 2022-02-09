@@ -6,4 +6,5 @@ export const ElementType ={
     REACT_LI:'li',
     REACT_UL: 'ui',
     REACT_DIV: 'div',
+    REACT_H1: 'h1',
 }
