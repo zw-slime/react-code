@@ -22,17 +22,27 @@ function reconcile(parentDom,instance,element) {
     } else if(element == null) {
         // 删除节点
         parentDom.removeChild(instance.dom)
-    } else if(instance.element.type === element.type) {
+    } else if (typeof element.type !== instance.element.type) {
+        // 替换节点
+        const newInstance = instantiate(element);
+        parentDom.replaceChild(newInstance.dom,instance.dom);
+        return newInstance
+    } else if(typeof element.type === "string") {
         // 更新节点属性
         updateDomProperties(instance.dom,instance.element.props,element.props);
         instance.childInstances = reconcileChildren(instance, element);
         instance.element = element;
         return instance;
     } else {
-        // 替换节点
-        const newInstance = instantiate(element);
-        parentDom.replaceChild(newInstance.dom,instance.dom);
-        return newInstance
+        // 更新class
+        instance.publicInstance.props = element.props;
+        const childElement = instance.publicInstance.render();
+        const oldChildInstance = instance.childInstance;
+        const childInstance = reconcile(parentDom, oldChildInstance, childElement);
+        instance.dom = childInstance.dom;
+        instance.childInstance = childInstance;
+        instance.element = element;
+        return instance;
     }
 }
 
@@ -55,22 +65,40 @@ function reconcileChildren(instance,element) {
 // 创建节点实例
 function instantiate(element) {
     const {type,props} = element;
+    const isDomElement = typeof type === "string";
 
-    // 创建dom元素
-    const isTextElement = type === ElementType.REACT_TEXT;
-    const dom = isTextElement ? document.createTextNode(""):document.createElement(type);
-    updateDomProperties(dom,[],props)
+    if(isDomElement) {
+        // 创建dom元素
+        const isTextElement = type === ElementType.REACT_TEXT;
+        const dom = isTextElement ? document.createTextNode(""):document.createElement(type);
+        updateDomProperties(dom,[],props)
 
-    // 实例化子节点列表
-    const childrenElements = props.children || [];
+        // 实例化子节点列表
+        const childrenElements = props.children || [];
 
-    const childInstances = childrenElements.map(instantiate);
-    const childDoms = childInstances.map(childInstance => childInstance.dom);
-    childDoms.forEach(childDom=> dom.appendChild(childDom));
+        const childInstances = childrenElements.map(instantiate);
+        const childDoms = childInstances.map(childInstance => childInstance.dom);
+        childDoms.forEach(childDom=> dom.appendChild(childDom));
 
-    const instance = {dom, element, childInstances};
-    return instance
+        const instance = {dom, element, childInstances};
+        return instance
+    } else {
+        const instance = {};
+        const publicInstance = createPublicInstance(element, instance);
+        const childElement = publicInstance.render();
+        const childInstance = instantiate(childElement);
+        const dom = childInstance.dom;
 
+        Object.assign(instance, { dom, element, childInstance, publicInstance });
+        return instance;
+    }
+}
+
+function createPublicInstance(element,internalInstance) {
+    const {type,props} = element;
+    const publicInstance = new type(props);
+    publicInstance.__internalInstance = internalInstance;
+    return publicInstance
 }
 
 // 更新dom属性
@@ -95,9 +123,28 @@ function updateDomProperties(dom,prevProps,nextProps) {
     })
 }
 
+class Component {
+    constructor(props) {
+        this.props = props;
+        this.state = this.state || {}
+    }
+
+    setState(partialState) {
+        this.state = Object.assign({},this.state,partialState)
+        updateInstance(this.__internalInstance);
+    }
+}
+
+function updateInstance(internalInstance) {
+    const parentDom = internalInstance.dom.parentNode;
+    const element = internalInstance.element
+    reconcile(parentDom,internalInstance,element)
+}
+
 
 const React =  {
-    render:Render
+    render:Render,
+    Component: Component
 }
 
 export default React;
