@@ -22,7 +22,7 @@ function reconcile(parentDom,instance,element) {
     } else if(element == null) {
         // 删除节点
         parentDom.removeChild(instance.dom)
-    } else if (typeof element.type !== instance.element.type) {
+    } else if (element.type !== instance.element.type) {
         // 替换节点
         const newInstance = instantiate(element);
         parentDom.replaceChild(newInstance.dom,instance.dom);
